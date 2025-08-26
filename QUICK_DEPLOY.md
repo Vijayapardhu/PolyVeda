@@ -6,7 +6,7 @@
 ```bash
 # Make sure all files are committed
 git add .
-git commit -m "Configure for SQLite deployment"
+git commit -m "Fix deployment structure for Render"
 git push origin main
 ```
 
@@ -97,6 +97,7 @@ Once deployed, you'll get:
 ### **1. Create Superuser (if needed):**
 ```bash
 # Access Render shell
+cd backend
 python manage.py createsuperuser
 ```
 
@@ -127,6 +128,9 @@ Add these environment variables in Render Dashboard:
 
 ### **Issue: "SQLite database locked"**
 **Solution**: This is rare on Render, but can happen with concurrent access
+
+### **Issue: "manage.py not found"**
+**Solution**: The build script now correctly navigates to the `backend` directory
 
 ## 📞 **Get Help**
 

@@ -7,6 +7,9 @@ set -e  # Exit on any error
 
 echo "🚀 Starting PolyVeda build process (SQLite)..."
 
+# Navigate to backend directory
+cd backend
+
 # Create necessary directories
 echo "📁 Creating necessary directories..."
 mkdir -p logs
@@ -42,7 +45,7 @@ apt-get install -y --no-install-recommends \
 # Set environment variables
 echo "⚙️ Setting environment variables..."
 export DJANGO_SETTINGS_MODULE=polyveda.settings.production
-export PYTHONPATH=/app
+export PYTHONPATH=/app/backend
 
 # Run database migrations
 echo "🗄️ Running database migrations..."
