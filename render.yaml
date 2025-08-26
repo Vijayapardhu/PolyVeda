@@ -4,8 +4,8 @@ services:
     env: python
     plan: free
     buildCommand: |
-      cd backend
       pip install -r requirements.txt
+      cd backend
       python manage.py collectstatic --noinput
       python manage.py migrate
     startCommand: cd backend && gunicorn polyveda.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
@@ -21,7 +21,7 @@ services:
       - key: ALLOWED_HOSTS
         value: .onrender.com
       - key: CSRF_TRUSTED_ORIGINS
-        value: https://polyveda.onrender.com
+        value: https://polyveda-web.onrender.com
       - key: STATIC_URL
         value: /static/
       - key: MEDIA_URL
