@@ -1,0 +1,160 @@
+databases:
+  - name: polyveda-postgres
+    databaseName: polyveda
+    user: polyveda_user
+    plan: free
+
+services:
+  - type: web
+    name: polyveda-web
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+    startCommand: gunicorn polyveda.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: polyveda.settings.production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: polyveda-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: polyveda-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://polyveda.onrender.com
+      - key: STATIC_URL
+        value: /static/
+      - key: MEDIA_URL
+        value: /media/
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        value: us-east-1
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USE_TLS
+        value: true
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: BLOCKCHAIN_RPC_URL
+        sync: false
+      - key: BLOCKCHAIN_CONTRACT_ADDRESS
+        sync: false
+      - key: BLOCKCHAIN_PRIVATE_KEY
+        sync: false
+      - key: RATE_LIMIT_CONFIG
+        value: '{"login": {"limit": 5, "window": 300}, "api": {"limit": 100, "window": 3600}}'
+    healthCheckPath: /health/
+    autoDeploy: true
+
+  - type: redis
+    name: polyveda-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+  - type: worker
+    name: polyveda-worker
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A polyveda worker --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: polyveda.settings.production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: polyveda-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: polyveda-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: polyveda-web
+          envVarKey: SECRET_KEY
+      - key: DEBUG
+        value: false
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: polyveda-web
+          envVarKey: AWS_ACCESS_KEY_ID
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: polyveda-web
+          envVarKey: AWS_SECRET_ACCESS_KEY
+      - key: AWS_STORAGE_BUCKET_NAME
+        fromService:
+          type: web
+          name: polyveda-web
+          envVarKey: AWS_STORAGE_BUCKET_NAME
+      - key: EMAIL_HOST_USER
+        fromService:
+          type: web
+          name: polyveda-web
+          envVarKey: EMAIL_HOST_USER
+      - key: EMAIL_HOST_PASSWORD
+        fromService:
+          type: web
+          name: polyveda-web
+          envVarKey: EMAIL_HOST_PASSWORD
+    autoDeploy: true
+
+  - type: worker
+    name: polyveda-beat
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A polyveda beat --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: polyveda.settings.production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: polyveda-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: polyveda-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: polyveda-web
+          envVarKey: SECRET_KEY
+      - key: DEBUG
+        value: false
+    autoDeploy: true
