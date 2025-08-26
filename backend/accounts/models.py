@@ -1,5 +1,5 @@
 """
-Advanced User models for PolyVeda with enterprise features.
+Enterprise-Grade User models for PolyVeda with advanced features.
 """
 from django.contrib.auth.models import AbstractUser
 from django.db import models, transaction
@@ -12,11 +12,114 @@ from datetime import timedelta
 import uuid
 import hashlib
 import secrets
+import jwt
+from cryptography.fernet import Fernet
+from django.conf import settings
+
+
+class BlockchainCredential(models.Model):
+    """
+    Blockchain-based credential verification system.
+    """
+    credential_hash = models.CharField(max_length=64, unique=True)
+    blockchain_tx_id = models.CharField(max_length=255, blank=True)
+    credential_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('degree', 'Degree Certificate'),
+            ('transcript', 'Academic Transcript'),
+            ('achievement', 'Achievement Badge'),
+            ('certification', 'Professional Certification'),
+            ('microcredential', 'Micro-Credential'),
+        ]
+    )
+    metadata = JSONField(default=dict)
+    is_verified = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'blockchain_credentials'
+        indexes = [
+            models.Index(fields=['credential_hash']),
+            models.Index(fields=['credential_type']),
+            models.Index(fields=['is_verified']),
+        ]
+
+
+class AIInsight(models.Model):
+    """
+    AI-powered insights and predictions.
+    """
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='ai_insights')
+    insight_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('attendance_prediction', 'Attendance Prediction'),
+            ('performance_forecast', 'Performance Forecast'),
+            ('risk_assessment', 'Risk Assessment'),
+            ('recommendation', 'Recommendation'),
+            ('anomaly_detection', 'Anomaly Detection'),
+        ]
+    )
+    confidence_score = models.DecimalField(max_digits=3, decimal_places=2)
+    prediction_data = JSONField(default=dict)
+    model_version = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'ai_insights'
+        indexes = [
+            models.Index(fields=['user', 'insight_type']),
+            models.Index(fields=['confidence_score']),
+            models.Index(fields=['created_at']),
+        ]
+
+
+class ComplianceAudit(models.Model):
+    """
+    Comprehensive compliance and regulatory audit tracking.
+    """
+    class ComplianceType(models.TextChoices):
+        GDPR = 'gdpr', _('GDPR Compliance')
+        FERPA = 'ferpa', _('FERPA Compliance')
+        SOC2 = 'soc2', _('SOC 2 Compliance')
+        ISO27001 = 'iso27001', _('ISO 27001 Compliance')
+        HIPAA = 'hipaa', _('HIPAA Compliance')
+        PCI_DSS = 'pci_dss', _('PCI DSS Compliance')
+        CCPA = 'ccpa', _('CCPA Compliance')
+    
+    compliance_type = models.CharField(max_length=20, choices=ComplianceType.choices)
+    audit_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('in_progress', 'In Progress'),
+            ('passed', 'Passed'),
+            ('failed', 'Failed'),
+            ('remediated', 'Remediated'),
+        ],
+        default='pending'
+    )
+    findings = JSONField(default=dict)
+    remediation_plan = JSONField(default=dict)
+    auditor = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='conducted_audits')
+    institution = models.ForeignKey('Institution', on_delete=models.CASCADE, related_name='compliance_audits')
+    
+    class Meta:
+        db_table = 'compliance_audits'
+        indexes = [
+            models.Index(fields=['compliance_type', 'status']),
+            models.Index(fields=['audit_date']),
+            models.Index(fields=['institution', 'compliance_type']),
+        ]
 
 
 class Institution(models.Model):
     """
-    Multi-tenant institution model for enterprise deployment.
+    Enterprise multi-tenant institution model with advanced features.
     """
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(max_length=50, unique=True)
@@ -38,13 +141,14 @@ class Institution(models.Model):
     currency = models.CharField(max_length=3, default='INR')
     language = models.CharField(max_length=10, default='en-IN')
     
-    # Subscription & Limits
+    # Enterprise Features
     subscription_plan = models.CharField(
         max_length=20,
         choices=[
             ('basic', 'Basic'),
             ('professional', 'Professional'),
             ('enterprise', 'Enterprise'),
+            ('premium', 'Premium'),
             ('custom', 'Custom'),
         ],
         default='basic'
@@ -52,6 +156,23 @@ class Institution(models.Model):
     max_users = models.PositiveIntegerField(default=1000)
     max_storage_gb = models.PositiveIntegerField(default=10)
     features_enabled = JSONField(default=dict)
+    
+    # Advanced Configuration
+    ai_features_enabled = JSONField(default=dict)
+    blockchain_enabled = models.BooleanField(default=False)
+    compliance_frameworks = ArrayField(models.CharField(max_length=20), default=list)
+    custom_integrations = JSONField(default=dict)
+    
+    # Security & Compliance
+    encryption_key = models.BinaryField(null=True, blank=True)
+    data_retention_policy = JSONField(default=dict)
+    privacy_settings = JSONField(default=dict)
+    security_config = JSONField(default=dict)
+    
+    # Performance & Monitoring
+    performance_metrics = JSONField(default=dict)
+    sla_config = JSONField(default=dict)
+    monitoring_config = JSONField(default=dict)
     
     # Status
     is_active = models.BooleanField(default=True)
@@ -70,6 +191,11 @@ class Institution(models.Model):
     def __str__(self):
         return self.name
     
+    def save(self, *args, **kwargs):
+        if not self.encryption_key:
+            self.encryption_key = Fernet.generate_key()
+        super().save(*args, **kwargs)
+    
     @property
     def is_trial_active(self):
         return self.trial_ends_at and self.trial_ends_at > timezone.now()
@@ -80,11 +206,25 @@ class Institution(models.Model):
         if self.academic_year_start <= now <= self.academic_year_end:
             return f"{self.academic_year_start.year}-{self.academic_year_end.year}"
         return None
+    
+    def get_encryption_cipher(self):
+        """Get Fernet cipher for data encryption."""
+        return Fernet(self.encryption_key)
+    
+    def encrypt_sensitive_data(self, data):
+        """Encrypt sensitive data."""
+        cipher = self.get_encryption_cipher()
+        return cipher.encrypt(data.encode()).decode()
+    
+    def decrypt_sensitive_data(self, encrypted_data):
+        """Decrypt sensitive data."""
+        cipher = self.get_encryption_cipher()
+        return cipher.decrypt(encrypted_data.encode()).decode()
 
 
 class User(AbstractUser):
     """
-    Advanced User model with enterprise features.
+    Enterprise-grade user model with advanced security and compliance features.
     """
     class Role(models.TextChoices):
         STUDENT = 'student', _('Student')
@@ -93,6 +233,8 @@ class User(AbstractUser):
         ADMIN = 'admin', _('Administrator')
         MANAGEMENT = 'management', _('Management')
         SUPER_ADMIN = 'super_admin', _('Super Administrator')
+        AUDITOR = 'auditor', _('Auditor')
+        SUPPORT = 'support', _('Support Staff')
 
     class Status(models.TextChoices):
         ACTIVE = 'active', _('Active')
@@ -101,6 +243,8 @@ class User(AbstractUser):
         PENDING = 'pending', _('Pending Approval')
         LOCKED = 'locked', _('Account Locked')
         EXPIRED = 'expired', _('Account Expired')
+        UNDER_REVIEW = 'under_review', _('Under Review')
+        COMPLIANCE_HOLD = 'compliance_hold', _('Compliance Hold')
 
     # Multi-tenancy
     institution = models.ForeignKey(
@@ -123,7 +267,7 @@ class User(AbstractUser):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     permissions = JSONField(default=dict)
     
-    # Security features
+    # Enterprise Security features
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=32, blank=True)
     backup_codes = ArrayField(models.CharField(max_length=10), blank=True, default=list)
@@ -131,6 +275,12 @@ class User(AbstractUser):
     password_expires_at = models.DateTimeField(null=True, blank=True)
     failed_login_attempts = models.PositiveIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
+    
+    # Advanced Security
+    biometric_enabled = models.BooleanField(default=False)
+    biometric_data_hash = models.CharField(max_length=64, blank=True)
+    hardware_token_enabled = models.BooleanField(default=False)
+    hardware_token_id = models.CharField(max_length=100, blank=True)
     
     # Session management
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
@@ -156,11 +306,28 @@ class User(AbstractUser):
         blank=True
     )
     
-    # Preferences
+    # Enterprise Features
     preferences = JSONField(default=dict)
     notification_settings = JSONField(default=dict)
     language = models.CharField(max_length=10, default='en-IN')
     timezone = models.CharField(max_length=50, default='Asia/Kolkata')
+    
+    # Compliance & Privacy
+    privacy_consent = models.BooleanField(default=False)
+    privacy_consent_date = models.DateTimeField(null=True, blank=True)
+    data_processing_consent = models.BooleanField(default=False)
+    marketing_consent = models.BooleanField(default=False)
+    data_export_requested = models.BooleanField(default=False)
+    data_deletion_requested = models.BooleanField(default=False)
+    
+    # AI & Analytics
+    ai_preferences = JSONField(default=dict)
+    analytics_consent = models.BooleanField(default=False)
+    personalized_recommendations = models.BooleanField(default=True)
+    
+    # Blockchain & Credentials
+    blockchain_wallet_address = models.CharField(max_length=42, blank=True)
+    digital_credentials = JSONField(default=list)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -197,6 +364,7 @@ class User(AbstractUser):
             models.Index(fields=['institution']),
             models.Index(fields=['created_at']),
             models.Index(fields=['last_activity']),
+            models.Index(fields=['blockchain_wallet_address']),
         ]
     
     def __str__(self):
@@ -284,6 +452,8 @@ class User(AbstractUser):
                 'view_own_results': True,
                 'submit_assignments': True,
                 'create_support_tickets': True,
+                'access_ai_insights': True,
+                'view_digital_credentials': True,
             },
             'faculty': {
                 'view_own_profile': True,
@@ -292,6 +462,8 @@ class User(AbstractUser):
                 'grade_assignments': True,
                 'view_student_profiles': True,
                 'create_announcements': True,
+                'access_ai_insights': True,
+                'generate_reports': True,
             },
             'hod': {
                 'view_own_profile': True,
@@ -299,6 +471,8 @@ class User(AbstractUser):
                 'view_department_reports': True,
                 'approve_requests': True,
                 'manage_faculty': True,
+                'access_advanced_analytics': True,
+                'manage_compliance': True,
             },
             'admin': {
                 'view_own_profile': True,
@@ -306,12 +480,29 @@ class User(AbstractUser):
                 'manage_system': True,
                 'view_all_reports': True,
                 'manage_institution': True,
+                'access_enterprise_features': True,
+                'manage_security': True,
             },
             'management': {
                 'view_own_profile': True,
                 'view_analytics': True,
                 'view_financial_reports': True,
                 'manage_policies': True,
+                'access_executive_dashboard': True,
+                'manage_compliance': True,
+            },
+            'auditor': {
+                'view_own_profile': True,
+                'conduct_audits': True,
+                'view_compliance_reports': True,
+                'access_audit_logs': True,
+                'generate_compliance_reports': True,
+            },
+            'support': {
+                'view_own_profile': True,
+                'manage_support_tickets': True,
+                'view_user_profiles': True,
+                'access_support_tools': True,
             },
             'super_admin': {
                 'all_permissions': True,
@@ -323,11 +514,48 @@ class User(AbstractUser):
         """Check if user has specific permission."""
         user_permissions = self.get_permissions()
         return user_permissions.get('all_permissions', False) or user_permissions.get(permission, False)
+    
+    def generate_jwt_token(self, expires_in=3600):
+        """Generate JWT token for API access."""
+        payload = {
+            'user_id': self.id,
+            'email': self.email,
+            'role': self.role,
+            'institution_id': self.institution.id if self.institution else None,
+            'exp': timezone.now() + timedelta(seconds=expires_in),
+            'iat': timezone.now(),
+        }
+        return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+    
+    def get_ai_insights(self, insight_type=None):
+        """Get AI insights for the user."""
+        insights = self.ai_insights.filter(expires_at__gt=timezone.now())
+        if insight_type:
+            insights = insights.filter(insight_type=insight_type)
+        return insights.order_by('-created_at')
+    
+    def get_digital_credentials(self):
+        """Get user's digital credentials."""
+        return BlockchainCredential.objects.filter(
+            credential_hash__in=self.digital_credentials
+        )
+    
+    def request_data_export(self):
+        """Request data export for GDPR compliance."""
+        self.data_export_requested = True
+        self.save(update_fields=['data_export_requested'])
+        # Trigger data export process
+    
+    def request_data_deletion(self):
+        """Request data deletion for GDPR compliance."""
+        self.data_deletion_requested = True
+        self.save(update_fields=['data_deletion_requested'])
+        # Trigger data deletion process
 
 
 class UserProfile(models.Model):
     """
-    Advanced user profile with comprehensive information.
+    Enterprise-grade user profile with comprehensive information and compliance features.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     
@@ -411,9 +639,25 @@ class UserProfile(models.Model):
     github_url = models.URLField(blank=True)
     portfolio_url = models.URLField(blank=True)
     
-    # Preferences
+    # Enterprise Features
+    preferences = JSONField(default=dict)
     notification_preferences = JSONField(default=dict)
     privacy_settings = JSONField(default=dict)
+    
+    # Compliance & Verification
+    kyc_verified = models.BooleanField(default=False)
+    kyc_verification_date = models.DateTimeField(null=True, blank=True)
+    kyc_documents = JSONField(default=list)
+    verification_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('in_progress', 'In Progress'),
+            ('verified', 'Verified'),
+            ('rejected', 'Rejected'),
+        ],
+        default='pending'
+    )
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -446,7 +690,7 @@ class UserProfile(models.Model):
 
 class UserSession(models.Model):
     """
-    Advanced session tracking with security features.
+    Enterprise-grade session tracking with advanced security features.
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
     session_key = models.CharField(max_length=40, unique=True)
@@ -472,6 +716,11 @@ class UserSession(models.Model):
     user_agent = models.TextField()
     is_secure = models.BooleanField(default=False)
     
+    # Advanced Security
+    device_fingerprint = models.CharField(max_length=64, blank=True)
+    risk_score = models.PositiveIntegerField(default=0)
+    threat_indicators = JSONField(default=list)
+    
     # Session management
     created_at = models.DateTimeField(auto_now_add=True)
     last_activity = models.DateTimeField(auto_now=True)
@@ -481,7 +730,8 @@ class UserSession(models.Model):
     
     # Security flags
     is_suspicious = models.BooleanField(default=False)
-    risk_score = models.PositiveIntegerField(default=0)
+    anomaly_detected = models.BooleanField(default=False)
+    security_events = JSONField(default=list)
     
     class Meta:
         db_table = 'user_sessions'
@@ -492,6 +742,7 @@ class UserSession(models.Model):
             models.Index(fields=['ip_address']),
             models.Index(fields=['is_active']),
             models.Index(fields=['expires_at']),
+            models.Index(fields=['device_fingerprint']),
         ]
     
     def __str__(self):
@@ -505,11 +756,20 @@ class UserSession(models.Model):
         """Extend session expiration."""
         self.expires_at = timezone.now() + timedelta(hours=hours)
         self.save(update_fields=['expires_at'])
+    
+    def add_security_event(self, event_type, details):
+        """Add security event to session."""
+        self.security_events.append({
+            'type': event_type,
+            'details': details,
+            'timestamp': timezone.now().isoformat()
+        })
+        self.save(update_fields=['security_events'])
 
 
 class AuditLog(models.Model):
     """
-    Comprehensive audit trail for compliance and security.
+    Enterprise-grade audit trail for comprehensive compliance and security.
     """
     class Action(models.TextChoices):
         CREATE = 'create', _('Create')
@@ -529,6 +789,10 @@ class AuditLog(models.Model):
         DATA_EXPORT = 'data_export', _('Data Export')
         DATA_IMPORT = 'data_import', _('Data Import')
         SYSTEM_CONFIG = 'system_config', _('System Configuration')
+        SECURITY_EVENT = 'security_event', _('Security Event')
+        COMPLIANCE_CHECK = 'compliance_check', _('Compliance Check')
+        AI_INSIGHT_GENERATED = 'ai_insight_generated', _('AI Insight Generated')
+        BLOCKCHAIN_CREDENTIAL = 'blockchain_credential', _('Blockchain Credential')
     
     class Severity(models.TextChoices):
         LOW = 'low', _('Low')
@@ -568,6 +832,19 @@ class AuditLog(models.Model):
     session_id = models.CharField(max_length=40, blank=True)
     request_id = models.UUIDField(default=uuid.uuid4, editable=False)
     
+    # Compliance
+    compliance_framework = models.CharField(max_length=20, blank=True)
+    data_classification = models.CharField(
+        max_length=20,
+        choices=[
+            ('public', 'Public'),
+            ('internal', 'Internal'),
+            ('confidential', 'Confidential'),
+            ('restricted', 'Restricted'),
+        ],
+        default='internal'
+    )
+    
     # Timestamps
     timestamp = models.DateTimeField(auto_now_add=True)
     
@@ -582,6 +859,7 @@ class AuditLog(models.Model):
             models.Index(fields=['institution', 'timestamp']),
             models.Index(fields=['severity', 'timestamp']),
             models.Index(fields=['ip_address', 'timestamp']),
+            models.Index(fields=['compliance_framework', 'timestamp']),
         ]
         ordering = ['-timestamp']
     
