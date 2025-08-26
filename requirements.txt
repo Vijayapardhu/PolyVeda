@@ -6,8 +6,7 @@ django-cors-headers==4.3.1
 django-filter==23.3
 django-extensions==3.2.3
 
-# Database and ORM
-psycopg2-binary==2.9.9
+# Database and ORM (SQLite is included with Python)
 django-redis==5.4.0
 
 # Authentication and Security
@@ -37,7 +36,6 @@ whitenoise==6.6.0
 
 # Environment and Configuration
 python-decouple==3.8
-dj-database-url==2.1.0
 
 # Testing
 pytest==7.4.3

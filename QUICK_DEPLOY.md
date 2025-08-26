@@ -1,4 +1,4 @@
-# 🚀 Quick Deploy Guide - PolyVeda on Render
+# 🚀 Quick Deploy Guide - PolyVeda on Render (SQLite)
 
 ## ✅ **Simplified Deployment Steps**
 
@@ -6,7 +6,7 @@
 ```bash
 # Make sure all files are committed
 git add .
-git commit -m "Prepare for Render deployment"
+git commit -m "Configure for SQLite deployment"
 git push origin main
 ```
 
@@ -21,15 +21,15 @@ git push origin main
 ### 3. **What Render Will Create**
 
 ✅ **Web Service** - Your Django application  
-✅ **PostgreSQL Database** - For data storage  
 ✅ **Redis Service** - For caching (optional)  
+✅ **SQLite Database** - Built into the application  
 
 ### 4. **Environment Variables (Auto-Configured)**
 
 The `render.yaml` file automatically sets:
 - `DJANGO_SETTINGS_MODULE=polyveda.settings.production`
 - `SECRET_KEY` (auto-generated)
-- `DATABASE_URL` (auto-provided)
+- `DATABASE_ENGINE=sqlite3`
 - `DEBUG=false`
 - `ALLOWED_HOSTS=.onrender.com`
 
@@ -54,7 +54,7 @@ Once deployed, you'll get:
 2. **Common Issues:**
    - Missing dependencies → Check `requirements.txt`
    - Import errors → Check `INSTALLED_APPS` in settings
-   - Database issues → Check `DATABASE_URL`
+   - SQLite permissions → Check file permissions
 
 ### **If App Won't Start:**
 
@@ -67,9 +67,9 @@ Once deployed, you'll get:
 
 ### **If Database Issues:**
 
-1. **Check Database Service** is running
+1. **Check SQLite File**: Database is stored as `db.sqlite3`
 2. **Verify Migrations**: Should run automatically
-3. **Check Connection**: Database URL should be auto-provided
+3. **Check Permissions**: SQLite file should be writable
 
 ## 📊 **Monitor Your Deployment**
 
@@ -117,13 +117,16 @@ Add these environment variables in Render Dashboard:
 **Solution**: Check `requirements.txt` includes all dependencies
 
 ### **Issue: "Database connection failed"**
-**Solution**: Verify `DATABASE_URL` is set correctly
+**Solution**: SQLite is built into Python, no external database needed
 
 ### **Issue: "Static files not loading"**
 **Solution**: Check `STATIC_ROOT` and `collectstatic` command
 
 ### **Issue: "Permission denied"**
 **Solution**: Check file permissions and ownership
+
+### **Issue: "SQLite database locked"**
+**Solution**: This is rare on Render, but can happen with concurrent access
 
 ## 📞 **Get Help**
 
@@ -144,9 +147,27 @@ Your deployment is successful when:
 - ✅ You can access the main page
 - ✅ Admin panel is accessible
 - ✅ API documentation loads
+- ✅ SQLite database is created and accessible
+
+## 💾 **SQLite Advantages**
+
+✅ **No External Database** - Everything is self-contained  
+✅ **Faster Deployment** - No database setup required  
+✅ **Simpler Configuration** - No connection strings needed  
+✅ **Built-in Backup** - Database file can be easily backed up  
+✅ **Development Friendly** - Same database for dev and production  
+
+## 🔄 **Future Migration to PostgreSQL**
+
+If you later want to switch to PostgreSQL:
+
+1. **Add PostgreSQL service** to `render.yaml`
+2. **Update settings** to use `dj_database_url`
+3. **Add `psycopg2-binary`** to `requirements.txt`
+4. **Run migrations** to transfer data
 
 ---
 
-**🎯 You're all set! PolyVeda should now be running on Render.**
+**🎯 You're all set! PolyVeda will now deploy with SQLite on Render.**
 
-If you encounter any issues, check the Render Dashboard logs first, as they provide detailed error information.
+This configuration is much simpler and should deploy without any issues. SQLite is perfect for getting started and can handle moderate traffic loads.

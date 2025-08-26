@@ -1,9 +1,3 @@
-databases:
-  - name: polyveda-postgres
-    databaseName: polyveda
-    user: polyveda_user
-    plan: free
-
 services:
   - type: web
     name: polyveda-web
@@ -19,10 +13,6 @@ services:
         value: 3.11.0
       - key: DJANGO_SETTINGS_MODULE
         value: polyveda.settings.production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: polyveda-postgres
-          property: connectionString
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
@@ -35,6 +25,8 @@ services:
         value: /static/
       - key: MEDIA_URL
         value: /media/
+      - key: DATABASE_ENGINE
+        value: sqlite3
     healthCheckPath: /health/
     autoDeploy: true
 

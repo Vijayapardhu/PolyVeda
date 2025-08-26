@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# PolyVeda Build Script for Render Deployment
+# PolyVeda Build Script for Render Deployment (SQLite Version)
 # This script handles the complete build process for the PolyVeda application
 
 set -e  # Exit on any error
 
-echo "🚀 Starting PolyVeda build process..."
+echo "🚀 Starting PolyVeda build process (SQLite)..."
 
 # Create necessary directories
 echo "📁 Creating necessary directories..."
@@ -24,7 +24,6 @@ echo "🔧 Installing system dependencies..."
 apt-get update -qq
 apt-get install -y --no-install-recommends \
     build-essential \
-    libpq-dev \
     libjpeg-dev \
     libpng-dev \
     libgif-dev \
@@ -120,7 +119,7 @@ python manage.py shell -c "
 from django.db import connection
 with connection.cursor() as cursor:
     cursor.execute('SELECT 1')
-    print('Database connection successful')
+    print('SQLite database connection successful')
 "
 
 # Test cache connection
@@ -137,18 +136,19 @@ else:
 # Create health check file
 echo "🏥 Creating health check file..."
 cat > health_check.txt << EOF
-PolyVeda Health Check
-====================
+PolyVeda Health Check (SQLite)
+==============================
 Build completed successfully at $(date)
 Environment: Production
+Database: SQLite
 Django Version: 4.2.7
 Python Version: $(python --version)
 EOF
 
-echo "🎉 PolyVeda build completed successfully!"
+echo "🎉 PolyVeda build completed successfully (SQLite)!"
 echo "📋 Build Summary:"
 echo "   - Python dependencies installed"
-echo "   - Database migrations applied"
+echo "   - SQLite database migrations applied"
 echo "   - Static files collected"
 echo "   - Superuser created"
 echo "   - Default institution created"
@@ -161,5 +161,6 @@ echo "   - Available memory: $(free -h | awk '/^Mem:/ {print $2}')"
 echo "   - Disk usage: $(df -h / | awk 'NR==2 {print $5}')"
 echo "   - Python version: $(python --version)"
 echo "   - Django version: $(python -c 'import django; print(django.get_version())')"
+echo "   - Database: SQLite"
 
-echo "🚀 PolyVeda is ready for deployment!"
+echo "🚀 PolyVeda is ready for deployment with SQLite!"

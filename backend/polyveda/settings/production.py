@@ -2,7 +2,6 @@
 Production settings for PolyVeda on Render.
 """
 import os
-import dj_database_url
 from pathlib import Path
 from .base import *
 
@@ -18,13 +17,12 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '.onrender.com').split(',')
 # CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://polyveda.onrender.com').split(',')
 
-# Database configuration for Render
+# Database configuration for SQLite
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Redis configuration (optional for initial deployment)
