@@ -6,7 +6,7 @@
 ```bash
 # Make sure all files are committed
 git add .
-git commit -m "Fix deployment structure for Render"
+git commit -m "Fix file structure for Render deployment"
 git push origin main
 ```
 
@@ -21,7 +21,6 @@ git push origin main
 ### 3. **What Render Will Create**
 
 ✅ **Web Service** - Your Django application  
-✅ **Redis Service** - For caching (optional)  
 ✅ **SQLite Database** - Built into the application  
 
 ### 4. **Environment Variables (Auto-Configured)**
@@ -52,7 +51,7 @@ Once deployed, you'll get:
 
 1. **Check Build Logs** in Render Dashboard
 2. **Common Issues:**
-   - Missing dependencies → Check `requirements.txt`
+   - Missing dependencies → Check `backend/requirements.txt`
    - Import errors → Check `INSTALLED_APPS` in settings
    - SQLite permissions → Check file permissions
 
@@ -114,8 +113,14 @@ Add these environment variables in Render Dashboard:
 
 ## 🚨 **Common Issues & Solutions**
 
+### **Issue: "requirements.txt not found"**
+**Solution**: ✅ FIXED - requirements.txt is now in backend/ directory
+
+### **Issue: "manage.py not found"**
+**Solution**: ✅ FIXED - Build script now correctly navigates to backend/ directory
+
 ### **Issue: "Module not found"**
-**Solution**: Check `requirements.txt` includes all dependencies
+**Solution**: Check `backend/requirements.txt` includes all dependencies
 
 ### **Issue: "Database connection failed"**
 **Solution**: SQLite is built into Python, no external database needed
@@ -128,9 +133,6 @@ Add these environment variables in Render Dashboard:
 
 ### **Issue: "SQLite database locked"**
 **Solution**: This is rare on Render, but can happen with concurrent access
-
-### **Issue: "manage.py not found"**
-**Solution**: The build script now correctly navigates to the `backend` directory
 
 ## 📞 **Get Help**
 
