@@ -1,0 +1,690 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - PolyVeda{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+                    <span class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {{ user.role|title }}
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="notifications-btn" class="p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <span class="sr-only">View notifications</span>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4.19 4H20a2 2 0 012 2v10a2 2 0 01-2 2H4.19A2 2 0 012 16V6a2 2 0 012-2z" />
+                            </svg>
+                            <span id="notification-badge" class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center hidden">0</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <button id="user-menu-btn" class="flex items-center space-x-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <img class="h-8 w-8 rounded-full" src="{{ user.profile.profile_picture.url|default:'/static/images/default-avatar.png' }}" alt="{{ user.get_full_name }}">
+                            <span class="text-gray-700">{{ user.get_full_name }}</span>
+                            <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold">Welcome back, {{ user.first_name }}!</h2>
+                        <p class="mt-1 text-blue-100">Here's what's happening in your institution today.</p>
+                        <div class="mt-4 flex items-center space-x-4 text-sm">
+                            <span class="flex items-center">
+                                <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                </svg>
+                                <span id="current-time"></span>
+                            </span>
+                            <span class="flex items-center">
+                                <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                </svg>
+                                <span id="current-date"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="text-right">
+                            <div class="text-3xl font-bold" id="online-users">0</div>
+                            <div class="text-blue-100">Users Online</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Students</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="total-students">0</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-sm text-green-600" id="students-change">+0%</span>
+                    <span class="text-sm text-gray-500">from last month</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Attendance Today</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="attendance-today">0%</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-sm text-green-600" id="attendance-change">+0%</span>
+                    <span class="text-sm text-gray-500">from yesterday</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Pending Assignments</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="pending-assignments">0</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-sm text-red-600" id="assignments-due">0 due today</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Average Performance</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="avg-performance">0%</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <span class="text-sm text-green-600" id="performance-change">+0%</span>
+                    <span class="text-sm text-gray-500">from last semester</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="activity-feed" class="space-y-4">
+                            <!-- Activity items will be loaded here -->
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">View all activity</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Chart -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Performance Trends</h3>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="performance-chart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button class="quick-action-btn" data-action="attendance">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">Take Attendance</span>
+                            </button>
+
+                            <button class="quick-action-btn" data-action="assignment">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">Create Assignment</span>
+                            </button>
+
+                            <button class="quick-action-btn" data-action="announcement">
+                                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-2">
+                                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">Post Announcement</span>
+                            </button>
+
+                            <button class="quick-action-btn" data-action="report">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
+                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900">Generate Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-8">
+                <!-- Today's Schedule -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Today's Schedule</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="today-schedule" class="space-y-4">
+                            <!-- Schedule items will be loaded here -->
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">View full schedule</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Recent Notifications</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="notifications-list" class="space-y-4">
+                            <!-- Notifications will be loaded here -->
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">View all notifications</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">System Status</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Database</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                    Online
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">File Storage</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                    Online
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Email Service</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                    Online
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">API Response</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                    <span id="api-response-time">0ms</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modals -->
+<div id="notification-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Notifications</h3>
+            <div id="notification-modal-content" class="space-y-3">
+                <!-- Notification content will be loaded here -->
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="close-notification-modal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Menu Dropdown -->
+<div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden">
+    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Security</a>
+    <hr class="my-1">
+    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Help & Support</a>
+    <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Sign out</a>
+</div>
+
+<script>
+// Dashboard JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dashboard
+    initializeDashboard();
+    
+    // Set up real-time updates
+    setupRealTimeUpdates();
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Update time
+    updateTime();
+    setInterval(updateTime, 1000);
+});
+
+function initializeDashboard() {
+    // Load dashboard data
+    loadDashboardData();
+    
+    // Initialize charts
+    initializeCharts();
+    
+    // Load activity feed
+    loadActivityFeed();
+    
+    // Load today's schedule
+    loadTodaySchedule();
+    
+    // Load notifications
+    loadNotifications();
+}
+
+function loadDashboardData() {
+    // Fetch dashboard data from API
+    fetch('/api/dashboard/')
+        .then(response => response.json())
+        .then(data => {
+            updateDashboardStats(data);
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
+        });
+}
+
+function updateDashboardStats(data) {
+    // Update quick stats
+    document.getElementById('total-students').textContent = data.total_students || 0;
+    document.getElementById('attendance-today').textContent = (data.attendance_today || 0) + '%';
+    document.getElementById('pending-assignments').textContent = data.pending_assignments || 0;
+    document.getElementById('avg-performance').textContent = (data.avg_performance || 0) + '%';
+    
+    // Update online users
+    document.getElementById('online-users').textContent = data.online_users || 0;
+}
+
+function initializeCharts() {
+    // Initialize performance chart using Chart.js
+    const ctx = document.getElementById('performance-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Performance',
+                data: [65, 72, 68, 75, 82, 78],
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+
+function loadActivityFeed() {
+    // Load recent activity
+    fetch('/api/activity/')
+        .then(response => response.json())
+        .then(data => {
+            const activityFeed = document.getElementById('activity-feed');
+            activityFeed.innerHTML = '';
+            
+            data.forEach(activity => {
+                const activityItem = createActivityItem(activity);
+                activityFeed.appendChild(activityItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading activity feed:', error);
+        });
+}
+
+function createActivityItem(activity) {
+    const div = document.createElement('div');
+    div.className = 'flex items-start space-x-3';
+    div.innerHTML = `
+        <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+            </div>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-900">${activity.description}</p>
+            <p class="text-sm text-gray-500">${activity.timestamp}</p>
+        </div>
+    `;
+    return div;
+}
+
+function loadTodaySchedule() {
+    // Load today's schedule
+    fetch('/api/schedule/today/')
+        .then(response => response.json())
+        .then(data => {
+            const scheduleContainer = document.getElementById('today-schedule');
+            scheduleContainer.innerHTML = '';
+            
+            data.forEach(schedule => {
+                const scheduleItem = createScheduleItem(schedule);
+                scheduleContainer.appendChild(scheduleItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading schedule:', error);
+        });
+}
+
+function createScheduleItem(schedule) {
+    const div = document.createElement('div');
+    div.className = 'flex items-center space-x-3 p-3 bg-gray-50 rounded-lg';
+    div.innerHTML = `
+        <div class="flex-shrink-0">
+            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900">${schedule.course}</p>
+            <p class="text-sm text-gray-500">${schedule.time} - ${schedule.room}</p>
+        </div>
+    `;
+    return div;
+}
+
+function loadNotifications() {
+    // Load notifications
+    fetch('/api/notifications/')
+        .then(response => response.json())
+        .then(data => {
+            const notificationsList = document.getElementById('notifications-list');
+            const notificationBadge = document.getElementById('notification-badge');
+            
+            notificationsList.innerHTML = '';
+            
+            data.forEach(notification => {
+                const notificationItem = createNotificationItem(notification);
+                notificationsList.appendChild(notificationItem);
+            });
+            
+            // Update badge
+            const unreadCount = data.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                notificationBadge.textContent = unreadCount;
+                notificationBadge.classList.remove('hidden');
+            } else {
+                notificationBadge.classList.add('hidden');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading notifications:', error);
+        });
+}
+
+function createNotificationItem(notification) {
+    const div = document.createElement('div');
+    div.className = `flex items-start space-x-3 p-3 ${notification.read ? 'bg-gray-50' : 'bg-blue-50'} rounded-lg`;
+    div.innerHTML = `
+        <div class="flex-shrink-0">
+            <div class="w-2 h-2 ${notification.read ? 'bg-gray-400' : 'bg-blue-500'} rounded-full"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900">${notification.title}</p>
+            <p class="text-sm text-gray-500">${notification.message}</p>
+            <p class="text-xs text-gray-400">${notification.timestamp}</p>
+        </div>
+    `;
+    return div;
+}
+
+function setupRealTimeUpdates() {
+    // Set up WebSocket connection for real-time updates
+    const ws = new WebSocket('ws://localhost:8000/ws/dashboard/');
+    
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        
+        switch(data.type) {
+            case 'stats_update':
+                updateDashboardStats(data.data);
+                break;
+            case 'new_activity':
+                addNewActivity(data.data);
+                break;
+            case 'new_notification':
+                addNewNotification(data.data);
+                break;
+        }
+    };
+    
+    ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+}
+
+function setupEventListeners() {
+    // Notification button
+    document.getElementById('notifications-btn').addEventListener('click', function() {
+        document.getElementById('notification-modal').classList.remove('hidden');
+    });
+    
+    // Close notification modal
+    document.getElementById('close-notification-modal').addEventListener('click', function() {
+        document.getElementById('notification-modal').classList.add('hidden');
+    });
+    
+    // User menu button
+    document.getElementById('user-menu-btn').addEventListener('click', function() {
+        const dropdown = document.getElementById('user-menu-dropdown');
+        dropdown.classList.toggle('hidden');
+    });
+    
+    // Quick action buttons
+    document.querySelectorAll('.quick-action-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const action = this.dataset.action;
+            handleQuickAction(action);
+        });
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('#user-menu-btn')) {
+            document.getElementById('user-menu-dropdown').classList.add('hidden');
+        }
+    });
+}
+
+function handleQuickAction(action) {
+    switch(action) {
+        case 'attendance':
+            window.location.href = '/attendance/';
+            break;
+        case 'assignment':
+            window.location.href = '/assignments/create/';
+            break;
+        case 'announcement':
+            window.location.href = '/announcements/create/';
+            break;
+        case 'report':
+            window.location.href = '/reports/';
+            break;
+    }
+}
+
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    const dateString = now.toLocaleDateString();
+    
+    document.getElementById('current-time').textContent = timeString;
+    document.getElementById('current-date').textContent = dateString;
+}
+
+function addNewActivity(activity) {
+    const activityFeed = document.getElementById('activity-feed');
+    const activityItem = createActivityItem(activity);
+    
+    // Add to top of feed
+    activityFeed.insertBefore(activityItem, activityFeed.firstChild);
+    
+    // Remove oldest item if more than 10
+    if (activityFeed.children.length > 10) {
+        activityFeed.removeChild(activityFeed.lastChild);
+    }
+}
+
+function addNewNotification(notification) {
+    const notificationsList = document.getElementById('notifications-list');
+    const notificationItem = createNotificationItem(notification);
+    
+    // Add to top of list
+    notificationsList.insertBefore(notificationItem, notificationsList.firstChild);
+    
+    // Update badge
+    const notificationBadge = document.getElementById('notification-badge');
+    const currentCount = parseInt(notificationBadge.textContent || '0');
+    notificationBadge.textContent = currentCount + 1;
+    notificationBadge.classList.remove('hidden');
+    
+    // Show toast notification
+    showToast(notification.title, notification.message);
+}
+
+function showToast(title, message) {
+    // Create toast notification
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 transform transition-transform duration-300 translate-x-full';
+    toast.innerHTML = `
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4.19 4H20a2 2 0 012 2v10a2 2 0 01-2 2H4.19A2 2 0 012 16V6a2 2 0 012-2z" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-gray-900">${title}</p>
+                <p class="text-sm text-gray-500">${message}</p>
+            </div>
+            <div class="ml-4 flex-shrink-0">
+                <button class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.parentElement.remove()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 300);
+    }, 5000);
+}
+</script>
+{% endblock %}
