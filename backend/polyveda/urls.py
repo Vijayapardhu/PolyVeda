@@ -18,14 +18,8 @@ urlpatterns = [
     path('api-status/', api_status, name='api_status'),
     path('metrics/', MetricsView.as_view(), name='metrics'),
     
-    # API endpoints
+    # API endpoints (only include existing apps)
     path('api/', include('accounts.urls')),
-    path('api/', include('academics.urls')),
-    path('api/', include('resources.urls')),
-    path('api/', include('announcements.urls')),
-    path('api/', include('forms.urls')),
-    path('api/', include('support.urls')),
-    path('api/', include('analytics.urls')),
     
     # API documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

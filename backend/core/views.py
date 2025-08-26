@@ -2,9 +2,8 @@
 Core views for PolyVeda including health checks and system status.
 """
 import os
-import psutil
 import platform
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
@@ -45,29 +44,9 @@ def health_check(request):
             cache_status = f"unhealthy: {str(e)}"
             logger.error(f"Cache health check failed: {e}")
 
-        # Check disk usage
-        disk_status = "healthy"
-        try:
-            disk_usage = psutil.disk_usage('/')
-            disk_percent = (disk_usage.used / disk_usage.total) * 100
-            if disk_percent > 90:
-                disk_status = f"warning: {disk_percent:.1f}% used"
-        except Exception as e:
-            disk_status = f"unhealthy: {str(e)}"
-
-        # Check memory usage
-        memory_status = "healthy"
-        try:
-            memory = psutil.virtual_memory()
-            memory_percent = memory.percent
-            if memory_percent > 85:
-                memory_status = f"warning: {memory_percent:.1f}% used"
-        except Exception as e:
-            memory_status = f"unhealthy: {str(e)}"
-
         # Overall health status
         overall_status = "healthy"
-        if any(status != "healthy" for status in [db_status, cache_status, disk_status, memory_status]):
+        if any(status != "healthy" for status in [db_status, cache_status]):
             overall_status = "unhealthy"
 
         response_data = {
@@ -78,8 +57,6 @@ def health_check(request):
             "services": {
                 "database": db_status,
                 "cache": cache_status,
-                "disk": disk_status,
-                "memory": memory_status,
             },
             "system": {
                 "platform": platform.platform(),
@@ -107,18 +84,6 @@ def system_status(request):
     Detailed system status endpoint for monitoring.
     """
     try:
-        # System information
-        system_info = {
-            "cpu_count": psutil.cpu_count(),
-            "cpu_percent": psutil.cpu_percent(interval=1),
-            "memory_total": psutil.virtual_memory().total,
-            "memory_available": psutil.virtual_memory().available,
-            "memory_percent": psutil.virtual_memory().percent,
-            "disk_total": psutil.disk_usage('/').total,
-            "disk_used": psutil.disk_usage('/').used,
-            "disk_percent": (psutil.disk_usage('/').used / psutil.disk_usage('/').total) * 100,
-        }
-
         # Django settings
         django_settings = {
             "debug": settings.DEBUG,
@@ -140,7 +105,6 @@ def system_status(request):
         response_data = {
             "status": "operational",
             "timestamp": timezone.now().isoformat(),
-            "system": system_info,
             "django": django_settings,
             "application": app_status,
         }
@@ -168,10 +132,6 @@ class MetricsView(View):
             # Basic metrics
             metrics = {
                 "timestamp": timezone.now().isoformat(),
-                "cpu_usage": psutil.cpu_percent(interval=1),
-                "memory_usage": psutil.virtual_memory().percent,
-                "disk_usage": (psutil.disk_usage('/').used / psutil.disk_usage('/').total) * 100,
-                "load_average": os.getloadavg() if hasattr(os, 'getloadavg') else None,
             }
 
             # Database metrics
@@ -180,27 +140,11 @@ class MetricsView(View):
                     cursor.execute("SELECT COUNT(*) FROM information_schema.tables")
                     table_count = cursor.fetchone()[0]
                     
-                    cursor.execute("SELECT pg_database_size(current_database())")
-                    db_size = cursor.fetchone()[0]
-                    
                     metrics["database"] = {
                         "table_count": table_count,
-                        "size_bytes": db_size,
-                        "size_mb": db_size / (1024 * 1024),
                     }
             except Exception as e:
                 metrics["database"] = {"error": str(e)}
-
-            # Cache metrics
-            try:
-                cache_info = cache.client.info()
-                metrics["cache"] = {
-                    "connected_clients": cache_info.get('connected_clients', 0),
-                    "used_memory": cache_info.get('used_memory', 0),
-                    "used_memory_peak": cache_info.get('used_memory_peak', 0),
-                }
-            except Exception as e:
-                metrics["cache"] = {"error": str(e)}
 
             return JsonResponse(metrics)
 
@@ -223,8 +167,6 @@ def api_status(request):
         services_status = {
             "database": "operational",
             "cache": "operational",
-            "celery": "operational",
-            "email": "operational",
         }
 
         # Test database
@@ -241,18 +183,6 @@ def api_status(request):
                 services_status["cache"] = "degraded"
         except Exception:
             services_status["cache"] = "degraded"
-
-        # Test Celery (if available)
-        try:
-            from celery import current_app
-            if not current_app.control.inspect().active():
-                services_status["celery"] = "degraded"
-        except Exception:
-            services_status["celery"] = "degraded"
-
-        # Test email (if configured)
-        if not getattr(settings, 'EMAIL_HOST_USER', None):
-            services_status["email"] = "not_configured"
 
         # Overall API status
         overall_status = "operational"
@@ -282,3 +212,21 @@ def api_status(request):
             "error": str(e),
             "timestamp": timezone.now().isoformat()
         }, status=500)
+
+
+def custom_404(request, exception):
+    """Custom 404 error handler."""
+    return JsonResponse({
+        "error": "Page not found",
+        "status_code": 404,
+        "message": "The requested resource was not found on this server."
+    }, status=404)
+
+
+def custom_500(request):
+    """Custom 500 error handler."""
+    return JsonResponse({
+        "error": "Internal server error",
+        "status_code": 500,
+        "message": "An internal server error occurred. Please try again later."
+    }, status=500)
