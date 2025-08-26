@@ -30,8 +30,3 @@ services:
         value: sqlite3
     healthCheckPath: /health/
     autoDeploy: true
-
-  - type: redis
-    name: polyveda-redis
-    plan: free
-    maxmemoryPolicy: allkeys-lru
