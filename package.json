@@ -1,0 +1,27 @@
+{
+  "name": "polyveda-frontend",
+  "version": "1.0.0",
+  "description": "Frontend assets for PolyVeda Academic Management System",
+  "scripts": {
+    "build:css": "tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css --minify",
+    "watch:css": "tailwindcss -i ./frontend/static/css/input.css -o ./frontend/static/css/output.css --watch",
+    "dev": "npm run watch:css",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.5",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "@tailwindcss/aspect-ratio": "^0.4.2"
+  },
+  "keywords": [
+    "polyveda",
+    "academic",
+    "management",
+    "tailwindcss"
+  ],
+  "author": "PolyVeda Team",
+  "license": "MIT"
+}

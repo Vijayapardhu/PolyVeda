@@ -1,0 +1,58 @@
+# Core Django and DRF
+Django==4.2.7
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.0
+django-cors-headers==4.3.1
+django-filter==23.3
+django-extensions==3.2.3
+
+# Database and ORM (SQLite is included with Python)
+django-redis==5.4.0
+
+# Authentication and Security
+django-allauth==0.57.0
+cryptography==41.0.7
+argon2-cffi==23.1.0
+
+# API Documentation
+drf-spectacular==0.26.5
+
+# File Storage
+django-storages==1.14.2
+Pillow==10.1.0
+
+# Email and Notifications
+django-anymail==10.2
+celery==5.3.4
+redis==5.0.1
+
+# PDF and QR Generation
+reportlab==4.0.7
+qrcode==7.4.2
+
+# Production Server
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Environment and Configuration
+python-decouple==3.8
+
+# Testing
+pytest==7.4.3
+pytest-django==4.7.0
+coverage==7.3.2
+
+# Development Tools
+django-debug-toolbar==4.2.0
+
+# HTTP and API
+requests==2.31.0
+urllib3==2.1.0
+
+# Date and Time
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Utilities
+python-slugify==8.0.1
+python-magic==0.4.27
