@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - PolyVeda{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <!-- Logo and Header -->
+        <div class="text-center">
+            <div class="mx-auto h-16 w-16 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-full flex items-center justify-center">
+                <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+            </div>
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+                Welcome to PolyVeda
+            </h2>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Sign in to your account to continue
+            </p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="card">
+            <div class="card-body">
+                <form class="space-y-6" method="post" x-data="{ loading: false }">
+                    {% csrf_token %}
+                    
+                    <!-- Email Field -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Email Address
+                        </label>
+                        <div class="mt-1">
+                            <input id="email" name="email" type="email" autocomplete="email" required
+                                   class="form-input"
+                                   placeholder="Enter your email address"
+                                   value="{{ form.email.value|default:'' }}">
+                        </div>
+                        {% if form.email.errors %}
+                            <div class="mt-1 text-sm text-danger-600">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password Field -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Password
+                        </label>
+                        <div class="mt-1">
+                            <input id="password" name="password" type="password" autocomplete="current-password" required
+                                   class="form-input"
+                                   placeholder="Enter your password">
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="mt-1 text-sm text-danger-600">
+                                {{ form.password.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Remember Me and Forgot Password -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember_me" name="remember_me" type="checkbox"
+                                   class="form-checkbox">
+                            <label for="remember_me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <div class="text-sm">
+                            <a href="{% url 'password_reset' %}" class="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
+                                Forgot your password?
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit" 
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                :disabled="loading"
+                                @click="loading = true">
+                            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                                <svg class="h-5 w-5 text-primary-500 group-hover:text-primary-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </span>
+                            <span x-show="!loading">Sign in</span>
+                            <span x-show="loading" class="flex items-center">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Signing in...
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Demo Credentials -->
+                    <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Demo Credentials:</h4>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                            <div><strong>Student:</strong> student@polyveda.edu / password123</div>
+                            <div><strong>Faculty:</strong> faculty@polyveda.edu / password123</div>
+                            <div><strong>Admin:</strong> admin@polyveda.edu / password123</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Additional Links -->
+        <div class="text-center">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Don't have an account? 
+                <a href="{% url 'register' %}" class="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300">
+                    Contact your administrator
+                </a>
+            </p>
+        </div>
+
+        <!-- Features Preview -->
+        <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-soft">
+                <div class="mx-auto h-8 w-8 bg-success-100 dark:bg-success-900 rounded-full flex items-center justify-center mb-2">
+                    <svg class="h-5 w-5 text-success-600 dark:text-success-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-medium text-gray-900 dark:text-white">Attendance Tracking</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Real-time attendance management</p>
+            </div>
+            
+            <div class="text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-soft">
+                <div class="mx-auto h-8 w-8 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mb-2">
+                    <svg class="h-5 w-5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-medium text-gray-900 dark:text-white">Resource Management</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Access learning materials</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
