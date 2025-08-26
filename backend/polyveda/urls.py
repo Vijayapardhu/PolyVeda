@@ -1,32 +1,32 @@
 """
-URL configuration for PolyVeda project.
+URL configuration for polyveda project.
 """
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-from core.views import health_check, system_status, api_status, MetricsView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+# Import core views for error handlers
+from core.views import custom_404, custom_500
 
 urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
     
-    # Health check endpoints for Render
-    path('health/', health_check, name='health_check'),
-    path('status/', system_status, name='system_status'),
-    path('api-status/', api_status, name='api_status'),
-    path('metrics/', MetricsView.as_view(), name='metrics'),
-    
-    # API endpoints (only include existing apps)
-    path('api/', include('accounts.urls')),
-    
-    # API documentation
+    # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # Frontend routes (for SPA)
+    # Health check endpoints
+    path('health/', include('core.urls')),
+    
+    # API endpoints
+    path('api/accounts/', include('accounts.urls')),
+    path('api/academics/', include('academics.urls')),
+    
+    # Frontend routes
     path('', include('frontend.urls')),
 ]
 

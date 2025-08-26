@@ -1,19 +1,17 @@
 """
-Enterprise-Grade User models for PolyVeda with advanced features.
+Enterprise-Grade User models for PolyVeda with SQLite compatibility.
 """
 from django.contrib.auth.models import AbstractUser
 from django.db import models, transaction
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django.core.cache import cache
-from django.contrib.postgres.fields import ArrayField, JSONField
 from django.utils import timezone
 from datetime import timedelta
 import uuid
 import hashlib
 import secrets
 import jwt
-from cryptography.fernet import Fernet
 from django.conf import settings
 
 
@@ -33,7 +31,7 @@ class BlockchainCredential(models.Model):
             ('microcredential', 'Micro-Credential'),
         ]
     )
-    metadata = JSONField(default=dict)
+    metadata = models.TextField(default='{}')  # JSON stored as text for SQLite
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -63,7 +61,7 @@ class AIInsight(models.Model):
         ]
     )
     confidence_score = models.DecimalField(max_digits=3, decimal_places=2)
-    prediction_data = JSONField(default=dict)
+    prediction_data = models.TextField(default='{}')  # JSON stored as text for SQLite
     model_version = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True)
@@ -103,8 +101,8 @@ class ComplianceAudit(models.Model):
         ],
         default='pending'
     )
-    findings = JSONField(default=dict)
-    remediation_plan = JSONField(default=dict)
+    findings = models.TextField(default='{}')  # JSON stored as text for SQLite
+    remediation_plan = models.TextField(default='{}')  # JSON stored as text for SQLite
     auditor = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='conducted_audits')
     institution = models.ForeignKey('Institution', on_delete=models.CASCADE, related_name='compliance_audits')
     
@@ -155,24 +153,24 @@ class Institution(models.Model):
     )
     max_users = models.PositiveIntegerField(default=1000)
     max_storage_gb = models.PositiveIntegerField(default=10)
-    features_enabled = JSONField(default=dict)
+    features_enabled = models.TextField(default='{}')  # JSON stored as text for SQLite
     
     # Advanced Configuration
-    ai_features_enabled = JSONField(default=dict)
+    ai_features_enabled = models.TextField(default='{}')  # JSON stored as text for SQLite
     blockchain_enabled = models.BooleanField(default=False)
-    compliance_frameworks = ArrayField(models.CharField(max_length=20), default=list)
-    custom_integrations = JSONField(default=dict)
+    compliance_frameworks = models.TextField(default='[]')  # JSON array stored as text for SQLite
+    custom_integrations = models.TextField(default='{}')  # JSON stored as text for SQLite
     
     # Security & Compliance
     encryption_key = models.BinaryField(null=True, blank=True)
-    data_retention_policy = JSONField(default=dict)
-    privacy_settings = JSONField(default=dict)
-    security_config = JSONField(default=dict)
+    data_retention_policy = models.TextField(default='{}')  # JSON stored as text for SQLite
+    privacy_settings = models.TextField(default='{}')  # JSON stored as text for SQLite
+    security_config = models.TextField(default='{}')  # JSON stored as text for SQLite
     
     # Performance & Monitoring
-    performance_metrics = JSONField(default=dict)
-    sla_config = JSONField(default=dict)
-    monitoring_config = JSONField(default=dict)
+    performance_metrics = models.TextField(default='{}')  # JSON stored as text for SQLite
+    sla_config = models.TextField(default='{}')  # JSON stored as text for SQLite
+    monitoring_config = models.TextField(default='{}')  # JSON stored as text for SQLite
     
     # Status
     is_active = models.BooleanField(default=True)
@@ -193,7 +191,8 @@ class Institution(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.encryption_key:
-            self.encryption_key = Fernet.generate_key()
+            import secrets
+            self.encryption_key = secrets.token_bytes(32)
         super().save(*args, **kwargs)
     
     @property
@@ -206,20 +205,6 @@ class Institution(models.Model):
         if self.academic_year_start <= now <= self.academic_year_end:
             return f"{self.academic_year_start.year}-{self.academic_year_end.year}"
         return None
-    
-    def get_encryption_cipher(self):
-        """Get Fernet cipher for data encryption."""
-        return Fernet(self.encryption_key)
-    
-    def encrypt_sensitive_data(self, data):
-        """Encrypt sensitive data."""
-        cipher = self.get_encryption_cipher()
-        return cipher.encrypt(data.encode()).decode()
-    
-    def decrypt_sensitive_data(self, encrypted_data):
-        """Decrypt sensitive data."""
-        cipher = self.get_encryption_cipher()
-        return cipher.decrypt(encrypted_data.encode()).decode()
 
 
 class User(AbstractUser):
@@ -265,12 +250,12 @@ class User(AbstractUser):
     # Advanced authentication
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    permissions = JSONField(default=dict)
+    permissions = models.TextField(default='{}')  # JSON stored as text for SQLite
     
     # Enterprise Security features
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=32, blank=True)
-    backup_codes = ArrayField(models.CharField(max_length=10), blank=True, default=list)
+    backup_codes = models.TextField(default='[]')  # JSON array stored as text for SQLite
     password_changed_at = models.DateTimeField(null=True, blank=True)
     password_expires_at = models.DateTimeField(null=True, blank=True)
     failed_login_attempts = models.PositiveIntegerField(default=0)
@@ -284,7 +269,7 @@ class User(AbstractUser):
     
     # Session management
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
-    last_login_location = JSONField(default=dict)
+    last_login_location = models.TextField(default='{}')  # JSON stored as text for SQLite
     last_login_user_agent = models.TextField(blank=True)
     session_timeout = models.PositiveIntegerField(default=30)  # minutes
     
@@ -307,8 +292,8 @@ class User(AbstractUser):
     )
     
     # Enterprise Features
-    preferences = JSONField(default=dict)
-    notification_settings = JSONField(default=dict)
+    preferences = models.TextField(default='{}')  # JSON stored as text for SQLite
+    notification_settings = models.TextField(default='{}')  # JSON stored as text for SQLite
     language = models.CharField(max_length=10, default='en-IN')
     timezone = models.CharField(max_length=50, default='Asia/Kolkata')
     
@@ -321,13 +306,13 @@ class User(AbstractUser):
     data_deletion_requested = models.BooleanField(default=False)
     
     # AI & Analytics
-    ai_preferences = JSONField(default=dict)
+    ai_preferences = models.TextField(default='{}')  # JSON stored as text for SQLite
     analytics_consent = models.BooleanField(default=False)
     personalized_recommendations = models.BooleanField(default=True)
     
     # Blockchain & Credentials
     blockchain_wallet_address = models.CharField(max_length=42, blank=True)
-    digital_credentials = JSONField(default=list)
+    digital_credentials = models.TextField(default='[]')  # JSON array stored as text for SQLite
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -413,21 +398,26 @@ class User(AbstractUser):
     
     def generate_backup_codes(self):
         """Generate new backup codes for 2FA."""
+        import json
         codes = [secrets.token_hex(4).upper() for _ in range(10)]
-        self.backup_codes = codes
+        self.backup_codes = json.dumps(codes)
         self.save(update_fields=['backup_codes'])
         return codes
     
     def verify_backup_code(self, code):
         """Verify a backup code and remove it if valid."""
-        if code in self.backup_codes:
-            self.backup_codes.remove(code)
+        import json
+        codes = json.loads(self.backup_codes)
+        if code in codes:
+            codes.remove(code)
+            self.backup_codes = json.dumps(codes)
             self.save(update_fields=['backup_codes'])
             return True
         return False
     
     def get_permissions(self):
         """Get user permissions including role-based and custom permissions."""
+        import json
         cache_key = f"user_permissions_{self.id}"
         permissions = cache.get(cache_key)
         
@@ -435,7 +425,7 @@ class User(AbstractUser):
             # Base role permissions
             role_permissions = self.get_role_permissions()
             # Custom permissions
-            custom_permissions = self.permissions.get('custom', {})
+            custom_permissions = json.loads(self.permissions).get('custom', {})
             # Merge permissions
             permissions = {**role_permissions, **custom_permissions}
             cache.set(cache_key, permissions, 300)  # Cache for 5 minutes
@@ -536,8 +526,10 @@ class User(AbstractUser):
     
     def get_digital_credentials(self):
         """Get user's digital credentials."""
+        import json
+        credential_hashes = json.loads(self.digital_credentials)
         return BlockchainCredential.objects.filter(
-            credential_hash__in=self.digital_credentials
+            credential_hash__in=credential_hashes
         )
     
     def request_data_export(self):
@@ -632,7 +624,7 @@ class UserProfile(models.Model):
     # Documents
     id_proof = models.FileField(upload_to='documents/id_proofs/', null=True, blank=True)
     address_proof = models.FileField(upload_to='documents/address_proofs/', null=True, blank=True)
-    academic_documents = JSONField(default=list)  # List of document URLs
+    academic_documents = models.TextField(default='[]')  # JSON array stored as text for SQLite
     
     # Social Media
     linkedin_url = models.URLField(blank=True)
@@ -640,14 +632,14 @@ class UserProfile(models.Model):
     portfolio_url = models.URLField(blank=True)
     
     # Enterprise Features
-    preferences = JSONField(default=dict)
-    notification_preferences = JSONField(default=dict)
-    privacy_settings = JSONField(default=dict)
+    preferences = models.TextField(default='{}')  # JSON stored as text for SQLite
+    notification_preferences = models.TextField(default='{}')  # JSON stored as text for SQLite
+    privacy_settings = models.TextField(default='{}')  # JSON stored as text for SQLite
     
     # Compliance & Verification
     kyc_verified = models.BooleanField(default=False)
     kyc_verification_date = models.DateTimeField(null=True, blank=True)
-    kyc_documents = JSONField(default=list)
+    kyc_documents = models.TextField(default='[]')  # JSON array stored as text for SQLite
     verification_status = models.CharField(
         max_length=20,
         choices=[
@@ -712,14 +704,14 @@ class UserSession(models.Model):
     
     # Location and security
     ip_address = models.GenericIPAddressField()
-    location = JSONField(default=dict)
+    location = models.TextField(default='{}')  # JSON stored as text for SQLite
     user_agent = models.TextField()
     is_secure = models.BooleanField(default=False)
     
     # Advanced Security
     device_fingerprint = models.CharField(max_length=64, blank=True)
     risk_score = models.PositiveIntegerField(default=0)
-    threat_indicators = JSONField(default=list)
+    threat_indicators = models.TextField(default='[]')  # JSON array stored as text for SQLite
     
     # Session management
     created_at = models.DateTimeField(auto_now_add=True)
@@ -731,7 +723,7 @@ class UserSession(models.Model):
     # Security flags
     is_suspicious = models.BooleanField(default=False)
     anomaly_detected = models.BooleanField(default=False)
-    security_events = JSONField(default=list)
+    security_events = models.TextField(default='[]')  # JSON array stored as text for SQLite
     
     class Meta:
         db_table = 'user_sessions'
@@ -759,11 +751,14 @@ class UserSession(models.Model):
     
     def add_security_event(self, event_type, details):
         """Add security event to session."""
-        self.security_events.append({
+        import json
+        events = json.loads(self.security_events)
+        events.append({
             'type': event_type,
             'details': details,
             'timestamp': timezone.now().isoformat()
         })
+        self.security_events = json.dumps(events)
         self.save(update_fields=['security_events'])
 
 
@@ -822,9 +817,9 @@ class AuditLog(models.Model):
     entity_name = models.CharField(max_length=200, blank=True)
     
     # Details
-    details = JSONField(default=dict, help_text=_('Additional details about the action'))
-    changes = JSONField(default=dict, help_text=_('Field changes for updates'))
-    metadata = JSONField(default=dict, help_text=_('Additional metadata'))
+    details = models.TextField(default='{}', help_text=_('Additional details about the action'))  # JSON stored as text for SQLite
+    changes = models.TextField(default='{}', help_text=_('Field changes for updates'))  # JSON stored as text for SQLite
+    metadata = models.TextField(default='{}', help_text=_('Additional metadata'))  # JSON stored as text for SQLite
     
     # Context
     ip_address = models.GenericIPAddressField(null=True, blank=True)
